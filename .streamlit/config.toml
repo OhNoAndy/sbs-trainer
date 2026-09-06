@@ -1,0 +1,9 @@
+# Streamlit's built-in theme (no CSS): dark navy with a coral-red primary,
+# to match the phone app's look.
+[theme]
+base = "dark"
+primaryColor = "#ff4d6d"
+backgroundColor = "#0b0e1a"
+secondaryBackgroundColor = "#151b2e"
+textColor = "#f3f4ff"
+font = "sans serif"

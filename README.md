@@ -201,7 +201,9 @@ sbs-trainer/
 │   ├── make_demo_data.py   # regenerates data/demo_program.json
 │   ├── make_phone_defaults.py # writes phone/defaults.js from defaults.py
 │   ├── make_icons.py       # draws the phone app icons with Pillow
+│   ├── make_rank_badges.py # draws the rank badges as PNGs with Pillow
 │   └── build_phone_release.py # assembles ../sbs-trainer-phone, the standalone folder to publish
+├── .streamlit/config.toml  # Streamlit's built-in dark theme (config, not CSS)
 ├── phone/                  # the offline phone app (HTML/CSS/JavaScript)
 │   ├── index.html, styles.css, app.js   # screens
 │   ├── program_logic.js    # port of program_logic.py, same function names
@@ -210,6 +212,7 @@ sbs-trainer/
 │   ├── sw.js, manifest.webmanifest, icons/   # offline support and home-screen icon
 │   └── test_program_logic.js, tests.html     # the mirrored tests
 ├── data/
+│   ├── badges/             # rank badge pictures, drawn by scripts/make_rank_badges.py
 │   ├── exercises.json      # trimmed catalog (876 exercises)
 │   ├── images/             # one start/finish photo strip per exercise + placeholder.png
 │   └── demo_program.json   # the presentation dataset

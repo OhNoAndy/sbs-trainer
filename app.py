@@ -178,6 +178,27 @@ def ordinal(number):
     return str(number) + suffix
 
 
+BADGES_DIR = os.path.join(storage.PROJECT_DIR, "data", "badges")
+
+
+def badge_path(tier_key):
+    """
+    Takes a tier key (or "locked"). Returns the path of its badge picture, drawn by
+    scripts/make_rank_badges.py, or "" if the badges have not been generated.
+    """
+    path = os.path.join(BADGES_DIR, str(tier_key) + ".png")
+    if os.path.exists(path):
+        return path
+    return ""
+
+
+def show_badge(tier_key, width):
+    """Takes a tier key and a pixel width. Draws the badge picture if it exists. Returns nothing."""
+    path = badge_path(tier_key)
+    if path:
+        st.image(path, width=width)
+
+
 def tier_text(tier_key, tier_name):
     """Takes a tier key and name. Returns the name wrapped in Streamlit's colour markup."""
     return ":" + TIER_TEXT_COLORS.get(tier_key, "gray") + "[**" + tier_name + "**]"
@@ -216,12 +237,13 @@ def draw_tier_ladder():
                    "(beginner, novice, intermediate, advanced, elite). This app splits them into ten tiers, with "
                    "three Legend steps inside the top 2.5%. The standards are approximate; any lift can use your "
                    "own thresholds from a standards calculator instead (Settings, Lifts).")
-        lines = []
         for position in range(len(defaults.RANK_TIERS) - 1, -1, -1):
             tier = defaults.RANK_TIERS[position]
-            lines.append("- " + tier_text(tier["key"], tier["name"]) + " · top "
-                         + str(round(100 - tier["min_percentile"], 2)) + "%")
-        st.markdown("\n".join(lines))
+            column_badge, column_text = st.columns([1, 6])
+            with column_badge:
+                show_badge(tier["key"], 44)
+            with column_text:
+                st.markdown(tier_text(tier["key"], tier["name"]) + " · top " + str(round(100 - tier["min_percentile"], 2)) + "%")
 
 
 def slots_used_by_split(frequency, split_style=defaults.SPLIT_FULL_BODY):
@@ -307,10 +329,15 @@ def page_home():
         if st.button("Go to today's workout", type="primary"):
             go_to_page(PAGE_WORKOUT)
         if logic.lifter_details_complete(program):
-            parts = []
-            for rank in logic.all_ranks(program):
-                parts.append(rank["name"] + " " + tier_text(rank["tier_key"], rank["tier_name"]))
-            st.markdown("**Ranks:** " + " · ".join(parts))
+            st.markdown("**Your ranks**")
+            ranks = logic.all_ranks(program)
+            for start in range(0, len(ranks), 5):
+                row = ranks[start:start + 5]
+                columns = st.columns(5)
+                for position in range(len(row)):
+                    with columns[position]:
+                        show_badge(row[position]["tier_key"], 72)
+                        st.caption(row[position]["name"] + "  \n" + tier_text(row[position]["tier_key"], row[position]["tier_name"]))
 
     st.subheader("How the program works")
     st.markdown(
@@ -624,7 +651,16 @@ def draw_exercise_card(program, exercise, week, day):
     key_suffix = slot + "_" + str(week) + "_" + str(day)
 
     st.divider()
-    st.subheader(exercise["name"])
+    if logic.lifter_details_complete(program):
+        rank = logic.rank_for_lift(program, slot)
+        column_badge, column_title = st.columns([1, 7])
+        with column_badge:
+            show_badge(rank["tier_key"], 56)
+        with column_title:
+            st.subheader(exercise["name"])
+            st.caption(tier_text(rank["tier_key"], rank["tier_name"]))
+    else:
+        st.subheader(exercise["name"])
     show_image(lift["name"], lift)
     with st.expander("Heavy single @8 first? (optional)"):
         single = st.number_input(
@@ -762,6 +798,17 @@ def page_workout():
             st.info(message)
         if ranked_up:
             st.balloons()
+            changes = []
+            if len(program["history"]) > 0:
+                changes = program["history"][-1].get("rank_changes", [])
+            for change in changes:
+                if change["to_tier"] > change["from_tier"]:
+                    column_badge, column_text = st.columns([1, 5])
+                    with column_badge:
+                        show_badge(defaults.RANK_TIERS[change["to_tier"]]["key"], 96)
+                    with column_text:
+                        st.markdown("### Rank up: " + change["name"])
+                        st.markdown(change["from_name"] + " → " + tier_text(defaults.RANK_TIERS[change["to_tier"]]["key"], change["to_name"]))
 
     if logic.is_cycle_finished(program):
         st.success("You finished all 21 weeks. Test your maxes, then start the next cycle - "
@@ -838,19 +885,24 @@ def page_ranks():
                + " at " + logic.format_weight(lifter["bodyweight"], units) + ", adjusted for bodyweight and age. "
                "Each lift is ranked by its training max, so ranks move with your training.")
     for rank in logic.all_ranks(program):
-        st.markdown("### " + rank["name"] + " · " + tier_text(rank["tier_key"], rank["tier_name"]))
-        st.progress(rank["progress"], text="About the " + ordinal(round(rank["percentile"])) + " percentile · training max "
-                    + logic.format_weight(rank["training_max"], units))
-        if rank["next_tier_name"] is None:
-            st.caption("Top of the ladder.")
-        else:
-            st.caption(logic.format_weight(rank["gap_to_next"], units) + " more on the training max to reach "
-                       + rank["next_tier_name"] + ".")
-        if rank["custom_thresholds"]:
-            st.caption("Using your own thresholds for this lift.")
-        elif rank["rank_factor"] != 1:
-            st.caption("Counted as " + logic.format_weight(rank["training_max"] / rank["rank_factor"], units)
-                       + " on the main lift (factor " + str(rank["rank_factor"]) + ").")
+        with st.container(border=True):
+            column_badge, column_text = st.columns([1, 5])
+            with column_badge:
+                show_badge(rank["tier_key"], 88)
+            with column_text:
+                st.markdown("### " + rank["name"] + " · " + tier_text(rank["tier_key"], rank["tier_name"]))
+                st.progress(rank["progress"], text="About the " + ordinal(round(rank["percentile"]))
+                            + " percentile · training max " + logic.format_weight(rank["training_max"], units))
+                if rank["next_tier_name"] is None:
+                    st.caption("Top of the ladder.")
+                else:
+                    st.caption(logic.format_weight(rank["gap_to_next"], units) + " more on the training max to reach "
+                               + rank["next_tier_name"] + ".")
+                if rank["custom_thresholds"]:
+                    st.caption("Using your own thresholds for this lift.")
+                elif rank["rank_factor"] != 1:
+                    st.caption("Counted as " + logic.format_weight(rank["training_max"] / rank["rank_factor"], units)
+                               + " on the main lift (factor " + str(rank["rank_factor"]) + ").")
     draw_tier_ladder()
 
 
