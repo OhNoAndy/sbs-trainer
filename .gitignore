@@ -1,0 +1,16 @@
+# Runtime data (your own training log lives here)
+user_data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Claude Code launch config
+.claude/

@@ -1,0 +1,15 @@
+{
+  "name": "SBS Trainer",
+  "short_name": "SBS Trainer",
+  "description": "Unofficial phone companion for the Stronger By Science programs by Greg Nuckols",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14161c",
+  "theme_color": "#14161c",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

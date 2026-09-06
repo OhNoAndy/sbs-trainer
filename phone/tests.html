@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SBS Trainer JS tests</title>
+  <style>body { font-family: monospace; background: #111; color: #eee; padding: 1rem; } .fail { color: #f66; }</style>
+</head>
+<body>
+  <h1>program_logic.js tests</h1>
+  <pre id="output">running...</pre>
+  <script src="./defaults.js?v=26"></script>
+  <script src="./program_logic.js?v=26"></script>
+  <script src="./test_program_logic.js?v=26"></script>
+  <script>
+    const output = document.getElementById("output");
+    output.textContent = "";
+    window.runAllTests(function (line) {
+      output.textContent += line + "\n";
+      if (line.startsWith("FAIL")) output.classList.add("fail");
+    });
+  </script>
+</body>
+</html>
